@@ -1,88 +1,79 @@
-# API HMCTS Marketplace Template Repository
+# api-cp-crime-defendant-details
 
-This is a template repository for HMCTS Marketplace APIs. It defines naming conventions, structure, and validation tooling for OpenAPI specifications.
+OpenAPI specification for the **Crime Defendant Details API** — read APIs for defendant lookup
+on the Common Platform (CP).
 
-The repository template and its associated build workflows are designed to support a single API specification per repository.
+> 🔗 API definitions follow the [HMCTS RESTful API Standards](https://hmcts.github.io/restful-api-standards/).
 
-> 🔗 API definitions should follow the [HMCTS RESTful API Standards](https://hmcts.github.io/restful-api-standards/).
+## Purpose
 
-## Naming Convention
+This repository is **specification-only**: it defines the OpenAPI contract, validation tooling,
+and publishing workflow for the Crime Defendant Details API. It contains no runtime code. The
+matching runtime implementation lives in
+[`service-cp-crime-defendant-details`](https://github.com/hmcts/service-cp-crime-defendant-details).
 
-> NOTE: Avoid using terms like `common, core, base, utils, helpers, misc, or shared`.
-> These names often allow for ambiguous ownership and quickly become black holes where cohesion goes to die.
+The OpenAPI spec lives at [`src/main/resources/openapi/openapi-spec.yml`](./src/main/resources/openapi/openapi-spec.yml)
+and is the single source of truth for this repository. Endpoint definitions are being authored
+via the HMCTS API-Marketplace requirements and design stages — see open questions below.
 
-Repository names follow a pattern from generic to specific:
+## Consumers
 
+- `service-cp-crime-defendant-details`
+
+## Ownership
+
+- **Owning team:** [`@hmcts/api-marketplace`](https://github.com/orgs/hmcts/teams/api-marketplace) (`maintain`)
+- **Repo admin:** [`@hmcts/api-marketplace-admin`](https://github.com/orgs/hmcts/teams/api-marketplace-admin) (`admin`)
+- **Product team:** API Marketplace
+- **Support model:** In-hours support only
+- **Escalation:** Slack `#api-marketplace-support`
+
+## Versioning
+
+- OpenAPI version: **3.1.0**
+- API version baseline: **v1.0.0** (SemVer)
+- Media type: `application/vnd.hmcts.cp.v1+json`, per
+  [HMCTS API Versioning Strategy](https://hmcts.github.io/restful-api-standards/) (media-type
+  versioning in the `Accept` header, not the URL path).
+
+## Building
+
+The build validates the OpenAPI spec and generates Java model/client artifacts published as a jar
+(`group = uk.gov.hmcts.cp`).
+
+```bash
+./gradlew build
 ```
-api-{sources-system}-[case-type]-{business-domain}-{name-of-entity}
+
+## Linting
+
+The spec is linted with [Spectral](https://stoplight.io/open-source/spectral) using the
+configuration in [`.spectral.yml`](./.spectral.yml):
+
+```bash
+npx @stoplight/spectral-cli lint src/main/resources/openapi/openapi-spec.yml
 ```
-* `sources-system`: 
-Some examples are:
-  * `cp` - Common Platform
-  * `dcs` - Crown Court Digital Case System
-  * `sscs` - Social Security and Child Support
-    
-* `case-type`: optional parameter could be:
 
-  * civil 
-  * crime 
-  * family 
-  * tribunal
+Linting also runs in CI via [`.github/workflows/lint-openapi.yml`](./.github/workflows/lint-openapi.yml).
 
-HMCTS manages all Civil, Criminal, Family (separate from civil), and Tribunal cases.
+## New team member setup
 
-* `business-domain`, or also could be known as `product-domain`
+Anyone newly added to the owning team should verify push access once before contributing:
 
-The Common Platform (CP) will be:
-  * `caseingestion`
-  * `casematerial`
-  * `caseadmin`
-  * `casehearing`
-  * `schedulingandlisting`
-
-### Reference Data Repositories
-
-Reference data APIs use the following naming format:
-
+```bash
+gh auth login                                       # if not already authenticated
+git clone git@github.com:hmcts/api-cp-crime-defendant-details.git
+cd api-cp-crime-defendant-details
+git checkout -b smoke/access-check
+git commit --allow-empty -m "chore: verify push access"
+git push -u origin smoke/access-check
+git push origin --delete smoke/access-check          # clean up the throwaway branch
 ```
-api-cp-refdata-{product-domain}-{name-of-entity}
-```
-It could be argued that `product-domain` should be optional for reference data, placing it under global ownership. But global ownership often means no ownership — and no accountability. Therefore, `product-domain` is **required**.
 
-## Supporting Documents
+If the push is rejected with a permissions error, check team membership of
+`@hmcts/api-marketplace` / `@hmcts/api-marketplace-admin` before assuming it's a tooling problem.
 
-The [`docs`](./docs) directory includes supporting information for the repository:
-
-- [`API-VERSIONING-STRATEGY.md`](./docs/API-VERSIONING-STRATEGY.md) – How we version APIs using media types and SemVer.
-- [`CHAIN_OF_CUSTODY.md`](./docs/CHAIN_OF_CUSTODY.md) – Steps taken to establish a secure software supply chain and audit trail.
-- [`DATA-PRODUCTS.md`](./docs/DATA-PRODUCTS.md) – Description of structured data outputs generated by the API.
-- [`GITHUB-ACTIONS.md`](./docs/GITHUB-ACTIONS.md) – Overview of GitHub Actions workflows, including secrets and variables.
-- [`OPENAPI-FILE-CONVENTIONS.md`](./docs/OPENAPI-FILE-CONVENTIONS.md) – OpenAPI file and content conventions.
-- [`OPENAPI-SPEC-VERSIONING.md`](./docs/OPENAPI-SPEC-VERSIONING.md) – Rules for evolving OpenAPI specs.
-  
-> **Note** the build requires secrets and variables to be available in project settings; see [GitHub Actions: Required Secrets and Variables](./docs/GITHUB-ACTIONS.md)
-
-## Post-Template Manual Steps
-
-### Setup
-
-* Go to settings of the repository -> General -> check "Automatically delete head branches"
-* Import the ruleset `.github/rulesets/main-branch-protection.json`  
-  To import the ruleset, follow GitHub’s instructions here:  
-  👉 [Importing a ruleset](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/managing-rulesets-for-a-repository#importing-a-ruleset)
-  
-Once the ruleset has been successfully imported via GitHub Settings, the new repository no longer requires `.github/rulesets/main-branch-protection.json` so it **should be deleted**:
-
-### Clean Up
-
-After using this template to create your repository, the following files are no longer needed and **should be deleted**:
-
-- `./docs/*`
-- `./src/main/resources/openapi/deleteme`
-
-Update the `./README.md` to reflect the context of the new created repository
-
-### Contribute to This Repository
+## Contributing
 
 Contributions are welcome! Please see the [CONTRIBUTING.md](.github/CONTRIBUTING.md) file for guidelines.
 
