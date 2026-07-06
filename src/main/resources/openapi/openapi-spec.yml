@@ -1,11 +1,16 @@
-openapi: 3.0.0
+openapi: 3.1.0
 servers:
-  - description: API Marketplace api - mocking example api
-    url: https://virtserver.swaggerhub.com/HMCTS-DTS/api-hmcts-crime-template/1.0.0
+  - description: Crime Defendant Details API
+    url: https://api-cp-crime-defendant-details.net/{version}
+    variables:
+      version:
+        default: 1.0.0
+        description: API version; matches the spec info.version
 
 info:
-  title: API Marketplace api - example api
-  description: API Marketplace api - simple example
+  title: Crime Defendant Details API
+  description: Provides read access to defendant identity details for criminal cases on
+    the Common Platform (CP).
   version: 1.0.0
   contact:
     email: no-reply@hmcts.com
@@ -13,75 +18,190 @@ info:
     name: MIT
     url: 'https://opensource.org/licenses/MIT'
 
+security:
+  - oAuthJwt: []
+
+tags:
+  - name: defendants
+    description: Defendant identity details
+
 paths:
-  /:
+  /defendants/cases/{caseURN}:
     get:
-      description: Root endpoint
-      operationId: getRoot
+      summary: Get defendant details for a case
+      description: >-
+        Returns defendant identity details (name, date of birth) for
+        defendants on a given case. Optionally narrow the result to a single
+        defendant via defendantId, or resolve identity across cases and
+        appearances via masterDefendantId. If no defendants match, an empty
+        list is returned.
+      operationId: getDefendantsByCase
       tags:
-        - root
-
-      responses:
-        '200':
-          description: OK
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: Hello
-
-  /example/{example_id}:
-    get:
-      description: Get example for example_id
-      operationId: getExampleByExampleId
-      tags:
-        - examples
+        - defendants
       parameters:
         - in: path
-          name: example_id
+          name: caseURN
           required: true
-          description: Unique id for the example - long
+          description: Unique Case URN identifying the case
           schema:
-            type: integer
-            format: int64
+            type: string
+          example: "20GD1234567"
+        - in: query
+          name: masterDefendantId
+          required: false
+          description: >-
+            Master defendant identifier used to resolve the defendant identity
+            across cases and appearances.
+          schema:
+            type: string
+            format: uuid
+          example: "a1f2e3d4-c5b6-4789-9abc-1d2e3f4a5b6c"
+        - in: query
+          name: defendantId
+          required: false
+          description: Unique identifier of the defendant for this case
+          schema:
+            type: string
+            format: uuid
+          example: "30b83084-d2fe-4a70-bbd1-fae1dfdb4b95"
       responses:
         '200':
-          description:  Examples found
+          description: Defendants found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExampleResponse"
+                type: array
+                items:
+                  $ref: "#/components/schemas/DefendantDetails"
+              example:
+                - defendantId: "30b83084-d2fe-4a70-bbd1-fae1dfdb4b95"
+                  masterDefendantId: "a1f2e3d4-c5b6-4789-9abc-1d2e3f4a5b6c"
+                  name: "John Doe"
+                  dateOfBirth: "1980-01-31"
         '400':
-          description: Bad input parameter
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+          $ref: "#/components/responses/BadRequest"
+        '401':
+          $ref: "#/components/responses/Unauthorized"
+        '403':
+          $ref: "#/components/responses/Forbidden"
+        '404':
+          $ref: "#/components/responses/NotFound"
+        '500':
+          $ref: "#/components/responses/InternalServerError"
 
 components:
+  securitySchemes:
+    oAuthJwt:
+      type: oauth2
+      description: >-
+        OAuth 2.0 protection. Callers must present a valid JWT bearer access
+        token obtained via the client credentials flow.
+      flows:
+        clientCredentials:
+          tokenUrl: https://api-cp-crime-defendant-details.net/oauth2/token
+          scopes:
+            defendant.read: Read access to defendant details data
+
+  responses:
+    BadRequest:
+      description: Bad input parameter
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "BAD_REQUEST"
+            message: "The supplied defendantId is not a valid UUID"
+            details:
+              parameter: "defendantId"
+            timestamp: "2026-07-06T11:33:22.794Z"
+            traceId: "b2f1c3d4e5f60718"
+    Unauthorized:
+      description: Authentication is missing or the access token is invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "UNAUTHORIZED"
+            message: "Access token is missing or invalid"
+            timestamp: "2026-07-06T11:33:22.794Z"
+            traceId: "c3a2b4d5e6f70819"
+    Forbidden:
+      description: The access token does not grant the required scope
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "FORBIDDEN"
+            message: "The access token does not grant the required scope defendant.read"
+            timestamp: "2026-07-06T11:33:22.794Z"
+            traceId: "d4b3c5e6f708192a"
+    NotFound:
+      description: The requested resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "NOT_FOUND"
+            message: "No case found for the supplied case URN"
+            details:
+              caseURN: "20GD1234567"
+            timestamp: "2026-07-06T11:33:22.794Z"
+            traceId: "e5c4d6f708192a3b"
+    InternalServerError:
+      description: An unexpected error occurred
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "INTERNAL_SERVER_ERROR"
+            message: "An unexpected error occurred while processing the request"
+            timestamp: "2026-07-06T11:33:22.794Z"
+            traceId: "f6d5e708192a3b4c"
+
   schemas:
-    ExampleResponse:
-      description: Details of examples associated with the example id
+    DefendantDetails:
+      description: Defendant identity details for a case
       type: object
       properties:
-        exampleId:
-          description: Id of the example - long
-          type: integer
-          format: int64
-        exampleText:
-          description: Information associated with the example id
+        defendantId:
+          description: Unique identifier of the defendant for this case
           type: string
-          example: "Some text"
+          format: uuid
+          example: "30b83084-d2fe-4a70-bbd1-fae1dfdb4b95"
+        masterDefendantId:
+          description: >-
+            Master defendant identifier used to resolve the defendant identity
+            across cases and appearances.
+          type: string
+          format: uuid
+          example: "a1f2e3d4-c5b6-4789-9abc-1d2e3f4a5b6c"
+        name:
+          description: Full name of the defendant
+          type: string
+          example: "John Doe"
+        dateOfBirth:
+          description: Date of birth of the defendant
+          type: string
+          format: date
+          example: "1980-01-31"
 
     ErrorResponse:
+      description: Standard error response
       type: object
       properties:
         error:
           type: string
           description: Machine-readable error code
+          example: "NOT_FOUND"
         message:
           type: string
           description: Human-readable error message
+          example: "No case found for the supplied case URN"
         details:
           type: object
           additionalProperties: true
@@ -89,6 +209,8 @@ components:
         timestamp:
           type: string
           format: date-time
+          example: "2026-07-06T11:33:22.794Z"
         traceId:
           type: string
           description: Unique identifier for error tracing
+          example: "b2f1c3d4e5f60718"
