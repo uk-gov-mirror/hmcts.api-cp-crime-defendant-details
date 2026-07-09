@@ -9,7 +9,7 @@ servers:
 
 info:
   title: Crime Defendant Details API
-  description: Provides read access to defendant identity details for criminal cases on
+  description: Provides read access to defendant details for criminal cases on
     the Common Platform (CP).
   version: 1.0.0
   contact:
@@ -23,16 +23,16 @@ security:
 
 tags:
   - name: defendants
-    description: Defendant identity details
+    description: Defendant details
 
 paths:
   /defendants/cases/{caseURN}:
     get:
       summary: Get defendant details for a case
       description: >-
-        Returns defendant identity details (name, date of birth) for
+        Returns defendant details (name, date of birth) for
         defendants on a given case. Optionally narrow the result to a single
-        defendant via defendantId, or resolve identity across cases and
+        defendant via defendantId, or resolve across cases and
         appearances via masterDefendantId. If no defendants match, an empty
         list is returned.
       operationId: getDefendantsByCase
@@ -50,7 +50,7 @@ paths:
           name: masterDefendantId
           required: false
           description: >-
-            Master defendant identifier used to resolve the defendant identity
+            Master defendant identifier used to resolve the defendant details
             across cases and appearances.
           schema:
             type: string
@@ -78,6 +78,10 @@ paths:
                   masterDefendantId: "a1f2e3d4-c5b6-4789-9abc-1d2e3f4a5b6c"
                   name: "John Doe"
                   dateOfBirth: "1980-01-31"
+                - defendantId: "7c9e6f3a-2b4d-4e8f-9a1c-5d3b8f7e2c6a"
+                  masterDefendantId: "7c9e6f3a-2b4d-4e8f-9a1c-5d3b8f7e2c6a"
+                  name: "Jane Smith"
+                  dateOfBirth: "1992-06-15"
         '400':
           $ref: "#/components/responses/BadRequest"
         '401':
@@ -165,7 +169,7 @@ components:
 
   schemas:
     DefendantDetails:
-      description: Defendant identity details for a case
+      description: Defendant details for a case
       type: object
       properties:
         defendantId:
@@ -175,7 +179,7 @@ components:
           example: "30b83084-d2fe-4a70-bbd1-fae1dfdb4b95"
         masterDefendantId:
           description: >-
-            Master defendant identifier used to resolve the defendant identity
+            Master defendant identifier used to resolve the defendant details
             across cases and appearances.
           type: string
           format: uuid
@@ -189,6 +193,7 @@ components:
           type: string
           format: date
           example: "1980-01-31"
+          x-field-extra-annotation: "@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)"
 
     ErrorResponse:
       description: Standard error response
