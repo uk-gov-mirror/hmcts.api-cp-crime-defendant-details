@@ -167,6 +167,10 @@ components:
     DefendantDetails:
       description: Defendant identity details for a case
       type: object
+      required:
+        - defendantId
+        - masterDefendantId
+        - name
       properties:
         defendantId:
           description: Unique identifier of the defendant for this case
@@ -185,7 +189,9 @@ components:
           type: string
           example: "John Doe"
         dateOfBirth:
-          description: Date of birth of the defendant
+          description: >-
+            Date of birth of the defendant. Optional — omitted from the
+            response when not known.
           type: string
           format: date
           example: "1980-01-31"
